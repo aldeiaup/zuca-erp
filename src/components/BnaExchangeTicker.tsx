@@ -46,23 +46,23 @@ export default function BnaExchangeTicker() {
   const refresh = useCallback(async (manual = false) => {
     if (manual) setLoading(true);
     try {
+      const currentRates = rates;
       const data = await fetchBnaRates();
-      setPrev({ USD: rates.USD, EUR: rates.EUR });
+      setPrev({ USD: currentRates.USD, EUR: currentRates.EUR });
       setRates(data);
       setLastFetch(new Date());
-      // Sincroniza com o store global
       updateTaxas({ USD: data.USD, EUR: data.EUR });
     } finally {
       if (manual) setLoading(false);
     }
-  }, [rates.USD, rates.EUR, updateTaxas]);
+  }, [updateTaxas]);
 
   // Polling automático
   useEffect(() => {
     refresh();
     const interval = setInterval(() => refresh(), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, []);
+  }, [refresh]);
 
   const src = sourceConfig[rates.source];
   const timeStr = lastFetch.toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' });

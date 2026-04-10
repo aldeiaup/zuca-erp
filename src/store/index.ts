@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { Tarefa } from '../components/kanban/types';
+import { EstadoTarefa, PrioridadeTarefa } from '../components/kanban/types';
 
 export interface User {
   id: string;
@@ -120,6 +122,15 @@ export interface Message {
   nomeAtendente?: string;
 }
 
+export interface TarefaRecepcao {
+  id: string;
+  texto: string;
+  estado: 'a_fazer' | 'em_atendimento' | 'finalizado';
+  conversaId?: string;
+  prioridade?: 'baixa' | 'normal' | 'alta';
+  criadaEm: Date;
+}
+
 export interface Conversa {
   id: string;
   clienteNome: string;
@@ -136,6 +147,28 @@ export interface Conversa {
   clienteId?: string;
   viaturaId?: string;
   atendente?: string;
+}
+
+export interface ChatInternoMensagem {
+  id: string;
+  conversaId: string;
+  texto: string;
+  remetente: 'atendente' | 'sistema';
+  nomeAtendente?: string;
+  timestamp: Date;
+  tipo: 'texto';
+  lida: boolean;
+}
+
+export interface ChatInterno {
+  id: string;
+  titulo: string;
+  tipo: 'geral' | 'setor';
+  setor?: string;
+  participantes: string[];
+  ultimaMensagem: string;
+  ultimaHora: Date;
+  naoLidas: number;
 }
 
 export interface Fornecedor {
@@ -258,6 +291,8 @@ interface AppState {
   transacoes: Transacao[];
   conversas: Conversa[];
   mensagens: Record<string, Message[]>;
+  chatsInternos: ChatInterno[];
+  mensagensChatInterno: Record<string, ChatInternoMensagem[]>;
   config: Config;
   
   // Financeiro Expandido
@@ -315,12 +350,28 @@ interface AppState {
   // Ações Config
   updateTaxas: (updated: { USD?: number; EUR?: number }) => void;
 
+  // Kanban
+  tarefasKanban: Tarefa[];
+  addTarefaKanban: (tarefa: Omit<Tarefa, 'id'>) => void;
+  updateTarefaKanban: (id: string, data: Partial<Tarefa>) => void;
+  deleteTarefaKanban: (id: string) => void;
+
   sendMessage: (conversaId: string, texto: string, remetente: 'cliente' | 'atendente', nomeAtendente?: string) => void;
   togglePinConversa: (id: string) => void;
   updateConversaStatus: (id: string, status: Conversa['status']) => void;
   deleteConversa: (id: string) => void;
 
+  sendChatInternoMessage: (chatId: string, texto: string, nomeAtendente: string) => void;
+
   updateConfig: (data: Partial<Config>) => void;
+
+  // Recepção
+  receptionOpen: boolean;
+  setReceptionOpen: (v: boolean) => void;
+  tarefasRecepcao: Record<'Benfica' | 'Alvalade', TarefaRecepcao[]>;
+  addTarefaRecepcao: (unidade: 'Benfica' | 'Alvalade', tarefa: Omit<TarefaRecepcao, 'id' | 'criadaEm'>) => void;
+  updateTarefaRecepcao: (unidade: 'Benfica' | 'Alvalade', id: string, data: Partial<TarefaRecepcao>) => void;
+  deleteTarefaRecepcao: (unidade: 'Benfica' | 'Alvalade', id: string) => void;
 }
 
 const mockClientes: Cliente[] = [
@@ -381,6 +432,7 @@ const mockFuncionarios: Funcionario[] = [
   { id: '3', nome: 'Pedro Manuel', cargo: 'Técnico Mecânico', tipo: 'funcionario', email: 'pedro@zucamotors.ao', telefone: '+244 925 678 901', dataAdmissao: new Date('2022-06-01'), salario: 150000, nif: '0034567890LA', ativo: true },
   { id: '4', nome: 'Ana Costa', cargo: 'Rececionista', tipo: 'funcionario', email: 'ana@zucamotors.ao', telefone: '+244 926 345 678', dataAdmissao: new Date('2023-01-15'), salario: 120000, nif: '0045678901LA', ativo: true },
   { id: '5', nome: 'Miguel Santos', cargo: 'Técnico Eletricista', tipo: 'funcionario', email: 'miguel@zucamotors.ao', telefone: '+244 927 890 123', dataAdmissao: new Date('2022-09-01'), salario: 145000, nif: '0056789012LA', ativo: true },
+  { id: '6', nome: 'Carlos Neto', cargo: 'Polidor / Estética', tipo: 'funcionario', email: 'carlos@zucamotors.ao', telefone: '+244 928 111 222', dataAdmissao: new Date('2023-03-20'), salario: 130000, nif: '0067890123LA', ativo: true },
 ];
 
 const mockFornecedores: Fornecedor[] = [
@@ -438,6 +490,54 @@ const mockMensagens: Record<string, Message[]> = {
   ],
 };
 
+const mockChatsInternos: ChatInterno[] = [
+  {
+    id: 'chat geral',
+    titulo: 'Geral',
+    tipo: 'geral',
+    participantes: [],
+    ultimaMensagem: 'Bem-vindo ao chat interno!',
+    ultimaHora: new Date(Date.now() - 86400000),
+    naoLidas: 0,
+  },
+  {
+    id: 'chat recepcao',
+    titulo: 'Recepção',
+    tipo: 'setor',
+    setor: 'recepcao',
+    participantes: [],
+    ultimaMensagem: '',
+    ultimaHora: new Date(Date.now() - 86400000),
+    naoLidas: 0,
+  },
+  {
+    id: 'chat oficina',
+    titulo: 'Oficina',
+    tipo: 'setor',
+    setor: 'oficina',
+    participantes: [],
+    ultimaMensagem: '',
+    ultimaHora: new Date(Date.now() - 86400000),
+    naoLidas: 0,
+  },
+  {
+    id: 'chat financeiro',
+    titulo: 'Financeiro',
+    tipo: 'setor',
+    setor: 'financeiro',
+    participantes: [],
+    ultimaMensagem: '',
+    ultimaHora: new Date(Date.now() - 86400000),
+    naoLidas: 0,
+  },
+];
+
+const mockMensagensChatInterno: Record<string, ChatInternoMensagem[]> = {
+  'chat geral': [
+    { id: 'mi1', conversaId: 'chat geral', texto: 'Bem-vindo ao chat interno da Zuca Motors!', remetente: 'sistema', timestamp: new Date(Date.now() - 86400000), tipo: 'texto', lida: true },
+  ],
+};
+
 const defaultConfig: Config = {
   empresa: {
     nome: 'Zucamotors Angola, Lda',
@@ -467,6 +567,238 @@ const defaultConfig: Config = {
     instagramBusinessId: '',
     verifyToken: 'ZUCA_' + Math.random().toString(36).substring(7).toUpperCase(),
   },
+};
+
+const mockTarefasKanban: Tarefa[] = [
+  {
+    id: 'tk-1',
+    titulo: 'Revisão Completa',
+    matricula: 'LD-01-23-AF',
+    servico: 'Revisão Completa',
+    responsavel: 'Pedro Manuel',
+    prioridade: PrioridadeTarefa.ALTA,
+    estado: EstadoTarefa.EM_EXECUCAO,
+    progresso: 45,
+    prazo: '2026-04-10',
+    classificacao: 'Mecânico',
+    equipa: 'Mecânica',
+    viaturaId: '1',
+    ordemId: '1',
+    gestorId: '2',
+  },
+  {
+    id: 'tk-2',
+    titulo: 'Diagnóstico Electrónico',
+    matricula: 'LD-45-67-CD',
+    servico: 'Diagnóstico',
+    responsavel: 'Miguel Santos',
+    prioridade: PrioridadeTarefa.NORMAL,
+    estado: EstadoTarefa.POR_INICIAR,
+    progresso: 0,
+    prazo: '2026-04-11',
+    classificacao: 'Electricista',
+    equipa: 'Elétrica',
+    viaturaId: '2',
+    ordemId: '2',
+    gestorId: '2',
+  },
+  {
+    id: 'tk-3',
+    titulo: 'Substituição Pastilhas',
+    matricula: 'LD-89-01-EF',
+    servico: 'Travagem',
+    responsavel: 'Pedro Manuel',
+    prioridade: PrioridadeTarefa.CRITICA,
+    estado: EstadoTarefa.IMPEDIMENTO,
+    progresso: 30,
+    prazo: '2026-04-09',
+    classificacao: 'Mecânico',
+    equipa: 'Mecânica',
+    resultado: 'Aguarda entrega da peça — kit pastilhas em falta no estoque.',
+    viaturaId: '3',
+    ordemId: '3',
+  },
+  {
+    id: 'tk-4',
+    titulo: 'Reparação Elétrica',
+    matricula: 'LU-12-34-GH',
+    servico: 'Elétrica',
+    responsavel: 'Miguel Santos',
+    prioridade: PrioridadeTarefa.ALTA,
+    estado: EstadoTarefa.EM_REVISAO,
+    progresso: 80,
+    prazo: '2026-04-12',
+    classificacao: 'Electricista',
+    equipa: 'Elétrica',
+    viaturaId: '4',
+    ordemId: '4',
+  },
+  {
+    id: 'tk-5',
+    titulo: 'Polimento Completo',
+    matricula: 'LD-56-78-IJ',
+    servico: 'Estética',
+    responsavel: 'Carlos Neto',
+    prioridade: PrioridadeTarefa.NORMAL,
+    estado: EstadoTarefa.CONCLUIDO,
+    progresso: 100,
+    prazo: '2026-04-08',
+    classificacao: 'Polidor',
+    equipa: 'Estética',
+    resultado: 'Polimento concluído com acabamento premium. Cliente notificado.',
+    viaturaId: '5',
+  },
+  // Tarefas adicionais para enriquecer métricas de desempenho
+  {
+    id: 'tk-6',
+    titulo: 'Substituição Kit Distribuição',
+    matricula: 'LD-22-44-KL',
+    servico: 'Motor',
+    responsavel: 'Pedro Manuel',
+    prioridade: PrioridadeTarefa.ALTA,
+    estado: EstadoTarefa.CONCLUIDO,
+    progresso: 100,
+    prazo: '2026-04-15',
+    classificacao: 'Mecânico',
+    equipa: 'Mecânica',
+    resultado: 'Kit substituído. Verificação realizada com sucesso.',
+  },
+  {
+    id: 'tk-7',
+    titulo: 'Alinhamento e Balanceamento',
+    matricula: 'LD-33-55-MN',
+    servico: 'Suspensão',
+    responsavel: 'Pedro Manuel',
+    prioridade: PrioridadeTarefa.NORMAL,
+    estado: EstadoTarefa.CONCLUIDO,
+    progresso: 100,
+    prazo: '2026-04-12',
+    classificacao: 'Mecânico',
+    equipa: 'Mecânica',
+    resultado: 'Alinhamento corrigido. Teste de estrada positivo.',
+  },
+  {
+    id: 'tk-8',
+    titulo: 'Recepção e Check-in Viatura',
+    matricula: 'LU-77-88-OP',
+    servico: 'Recepção',
+    responsavel: 'Ana Costa',
+    prioridade: PrioridadeTarefa.NORMAL,
+    estado: EstadoTarefa.CONCLUIDO,
+    progresso: 100,
+    prazo: '2026-04-10',
+    classificacao: 'Rececionista',
+    equipa: 'Recepção',
+    resultado: 'Check-in concluído. Ficha do cliente atualizada.',
+  },
+  {
+    id: 'tk-9',
+    titulo: 'Seguimento de Orçamentos Pendentes',
+    matricula: '—',
+    servico: 'Administrativo',
+    responsavel: 'Ana Costa',
+    prioridade: PrioridadeTarefa.ALTA,
+    estado: EstadoTarefa.EM_EXECUCAO,
+    progresso: 55,
+    prazo: '2026-04-20',
+    classificacao: 'Rececionista',
+    equipa: 'Recepção',
+  },
+  {
+    id: 'tk-10',
+    titulo: 'Revisão Procedimentos Oficina',
+    matricula: '—',
+    servico: 'Gestão',
+    responsavel: 'João Silva',
+    prioridade: PrioridadeTarefa.ALTA,
+    estado: EstadoTarefa.CONCLUIDO,
+    progresso: 100,
+    prazo: '2026-04-16',
+    classificacao: 'Gerente',
+    equipa: 'Gestão',
+    resultado: 'Procedimentos actualizados e comunicados à equipa.',
+    gestorId: '1',
+  },
+  {
+    id: 'tk-11',
+    titulo: 'Avaliação Desempenho Trimestral',
+    matricula: '—',
+    servico: 'Gestão',
+    responsavel: 'João Silva',
+    prioridade: PrioridadeTarefa.NORMAL,
+    estado: EstadoTarefa.EM_REVISAO,
+    progresso: 75,
+    prazo: '2026-04-25',
+    classificacao: 'Gerente',
+    equipa: 'Gestão',
+    gestorId: '1',
+  },
+  {
+    id: 'tk-12',
+    titulo: 'Ceragem Interior Premium',
+    matricula: 'LD-99-11-QR',
+    servico: 'Estética',
+    responsavel: 'Carlos Neto',
+    prioridade: PrioridadeTarefa.NORMAL,
+    estado: EstadoTarefa.EM_EXECUCAO,
+    progresso: 35,
+    prazo: '2026-04-05',
+    classificacao: 'Polidor',
+    equipa: 'Estética',
+  },
+  {
+    id: 'tk-13',
+    titulo: 'Diagnóstico Sistema Injeção',
+    matricula: 'LU-44-22-ST',
+    servico: 'Diagnóstico',
+    responsavel: 'Miguel Santos',
+    prioridade: PrioridadeTarefa.ALTA,
+    estado: EstadoTarefa.CONCLUIDO,
+    progresso: 100,
+    prazo: '2026-04-11',
+    classificacao: 'Electricista',
+    equipa: 'Elétrica',
+    resultado: 'Falha no sensor MAP identificada e corrigida.',
+  },
+  {
+    id: 'tk-14',
+    titulo: 'Supervisão Controlo de Qualidade',
+    matricula: '—',
+    servico: 'Gestão',
+    responsavel: 'Mauro André',
+    prioridade: PrioridadeTarefa.ALTA,
+    estado: EstadoTarefa.CONCLUIDO,
+    progresso: 100,
+    prazo: '2026-04-15',
+    classificacao: 'Administrador',
+    equipa: 'Gestão',
+    resultado: 'Auditoria interna concluída. 3 pontos de melhoria identificados.',
+  },
+  {
+    id: 'tk-15',
+    titulo: 'Plano Expansão Alvalade',
+    matricula: '—',
+    servico: 'Gestão',
+    responsavel: 'Mauro André',
+    prioridade: PrioridadeTarefa.CRITICA,
+    estado: EstadoTarefa.EM_EXECUCAO,
+    progresso: 60,
+    prazo: '2026-04-30',
+    classificacao: 'Administrador',
+    equipa: 'Gestão',
+  },
+];
+
+const mockTarefasRecepcao: Record<'Benfica' | 'Alvalade', TarefaRecepcao[]> = {
+  Benfica: [
+    { id: 'tr-1', texto: 'Confirmar orçamento BMW X5 com Sr. João', estado: 'a_fazer', conversaId: '1', prioridade: 'alta', criadaEm: new Date() },
+    { id: 'tr-2', texto: 'Ligar à Mercedes para peça em falta (OS260002)', estado: 'em_atendimento', prioridade: 'normal', criadaEm: new Date(Date.now() - 3600000) },
+    { id: 'tr-3', texto: 'Enviar recibo pagamento Range Rover', estado: 'finalizado', conversaId: '3', prioridade: 'baixa', criadaEm: new Date(Date.now() - 7200000) },
+  ],
+  Alvalade: [
+    { id: 'tr-4', texto: 'Agendar visita técnica — Audi Q7 (Ana Paula)', estado: 'a_fazer', prioridade: 'normal', criadaEm: new Date() },
+    { id: 'tr-5', texto: 'Responder Instagram DM sobre polimento', estado: 'em_atendimento', conversaId: '2', prioridade: 'alta', criadaEm: new Date(Date.now() - 1800000) },
+  ],
 };
 
 export const useStore = create<AppState>()(
@@ -507,6 +839,8 @@ export const useStore = create<AppState>()(
       transacoes: mockTransacoes,
       conversas: mockConversas,
       mensagens: mockMensagens,
+      chatsInternos: mockChatsInternos,
+      mensagensChatInterno: mockMensagensChatInterno,
       config: defaultConfig,
       
       caixasContas: mockCaixasContas,
@@ -671,10 +1005,13 @@ export const useStore = create<AppState>()(
             .reduce((acc, curr) => acc + curr.valor, 0);
           
           const inss = f.salario * (state.config.fiscal.inssFuncionario / 100);
-          // Cálculo simplificado de IRT (Angola - Tabela progressiva simulada)
-          let irt = 0;
-          if (f.salario > 100000) irt = (f.salario - 100000) * 0.13;
-          if (f.salario > 200000) irt = irt + (f.salario - 200000) * 0.07;
+          // Cálculo de IRT (Angola - Tabela progressiva)
+          const calcularIrt = (salario: number): number => {
+            if (salario <= 100000) return 0;
+            if (salario <= 200000) return (salario - 100000) * 0.13;
+            return (100000 * 0.13) + ((salario - 200000) * 0.07);
+          };
+          const irt = calcularIrt(f.salario);
 
           return {
             id: `FP-${f.id}-${mes}-${ano}`,
@@ -732,6 +1069,18 @@ export const useStore = create<AppState>()(
         adiantamentos: [...state.adiantamentos, { ...adiantamento, id: String(Date.now()) }]
       })),
 
+      // Kanban
+      tarefasKanban: mockTarefasKanban,
+      addTarefaKanban: (tarefa) => set((state) => ({
+        tarefasKanban: [...state.tarefasKanban, { ...tarefa, id: `tk-${Date.now()}` }]
+      })),
+      updateTarefaKanban: (id, data) => set((state) => ({
+        tarefasKanban: state.tarefasKanban.map((t) => t.id === id ? { ...t, ...data } : t)
+      })),
+      deleteTarefaKanban: (id) => set((state) => ({
+        tarefasKanban: state.tarefasKanban.filter((t) => t.id !== id)
+      })),
+
       updateTaxas: (updated) => set((state) => ({
         taxasCambio: { ...state.taxasCambio, ...updated }
       })),
@@ -780,12 +1129,61 @@ export const useStore = create<AppState>()(
       deleteConversa: (id) => set((state) => ({
         conversas: state.conversas.filter(c => c.id !== id)
       })),
+
+      sendChatInternoMessage: (chatId, texto, nomeAtendente) => set((state) => {
+        const msg: ChatInternoMensagem = {
+          id: String(Date.now()),
+          conversaId: chatId,
+          texto,
+          remetente: 'atendente',
+          nomeAtendente,
+          timestamp: new Date(),
+          tipo: 'texto',
+          lida: true,
+        };
+        const updatedMensagens = {
+          ...state.mensagensChatInterno,
+          [chatId]: [...(state.mensagensChatInterno[chatId] || []), msg]
+        };
+        const updatedChats = state.chatsInternos.map(c => 
+          c.id === chatId 
+            ? { ...c, ultimaMensagem: texto, ultimaHora: new Date() }
+            : c
+        );
+        return { mensagensChatInterno: updatedMensagens, chatsInternos: updatedChats };
+      }),
+
+      // Recepção
+      receptionOpen: false,
+      setReceptionOpen: (v) => set({ receptionOpen: v }),
+      tarefasRecepcao: mockTarefasRecepcao,
+      addTarefaRecepcao: (unidade, tarefa) => set((state) => ({
+        tarefasRecepcao: {
+          ...state.tarefasRecepcao,
+          [unidade]: [
+            ...state.tarefasRecepcao[unidade],
+            { ...tarefa, id: `tr-${Date.now()}`, criadaEm: new Date() },
+          ],
+        },
+      })),
+      updateTarefaRecepcao: (unidade, id, data) => set((state) => ({
+        tarefasRecepcao: {
+          ...state.tarefasRecepcao,
+          [unidade]: state.tarefasRecepcao[unidade].map((t) =>
+            t.id === id ? { ...t, ...data } : t
+          ),
+        },
+      })),
+      deleteTarefaRecepcao: (unidade, id) => set((state) => ({
+        tarefasRecepcao: {
+          ...state.tarefasRecepcao,
+          [unidade]: state.tarefasRecepcao[unidade].filter((t) => t.id !== id),
+        },
+      })),
     }),
     {
       name: 'zuca-storage',
       partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
         clientes: state.clientes,
         viaturas: state.viaturas,
         ordensServico: state.ordensServico,
@@ -802,6 +1200,8 @@ export const useStore = create<AppState>()(
         folhasPagamento: state.folhasPagamento,
         adiantamentos: state.adiantamentos,
         taxasCambio: state.taxasCambio,
+        tarefasKanban: state.tarefasKanban,
+        tarefasRecepcao: state.tarefasRecepcao,
       }),
     }
   )

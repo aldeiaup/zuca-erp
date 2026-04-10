@@ -6,7 +6,7 @@ import {
   Tag, Phone, ShieldCheck, Eye, Printer, Send, Hash
 } from 'lucide-react';
 import { useStore } from '../store';
-import type { Transacao, Fornecedor, CaixaConta, FolhaPagamento, Adiantamento, Fatura } from '../store';
+import type { Transacao, Fornecedor } from '../store';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { useState, useMemo } from 'react';
@@ -33,12 +33,8 @@ export default function Financeiro() {
     clientes, 
     transacoes, 
     fornecedores, 
-    funcionarios,
     caixasContas,
     folhasPagamento,
-    adiantamentos,
-    taxasCambio,
-    config,
     addTransacao, 
     updateTransacao, 
     deleteTransacao,
@@ -48,10 +44,7 @@ export default function Financeiro() {
     addFatura,
     updateFatura,
     deleteFatura,
-    toggleCaixa,
-    processarFolha,
-    pagarFolha,
-    addAdiantamento
+    toggleCaixa
   } = useStore();
   
   const [activeTab, setActiveTab] = useState<'dashboard' | 'caixas' | 'transacoes' | 'faturacao' | 'folha' | 'fornecedores'>('dashboard');
@@ -60,14 +53,19 @@ export default function Financeiro() {
   const [modalType, setModalType] = useState<'transacao' | 'fornecedor' | 'adiantamento' | 'conta' | 'fatura'>('transacao');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  const [selectedMes, setSelectedMes] = useState(new Date().getMonth() + 1);
-  const [selectedAno, setSelectedAno] = useState(new Date().getFullYear());
   const [selectedConta, setSelectedConta] = useState<string | 'todos'>('todos');
 
   // Estados Faturas
-  const [selectedFatura, setSelectedFatura] = useState<string | null>(null);
-  const [faturaFilter, setFaturaFilter] = useState<'all' | 'paga' | 'emitida'>('all');
-  const [faturaForm, setFaturaForm] = useState<FaturaForm>({
+  const faturaFormInitial = {
+    clienteId: '',
+    subtotal: 0,
+    ivaRate: 14,
+    dataEmissao: new Date().toISOString().split('T')[0],
+    dataVencimento: '',
+    status: 'emitida' as FaturaStatus,
+    meioPagamento: '' as MeioPagamento | '',
+  };
+  const [faturaForm, setFaturaForm] = useState<FaturaForm>(faturaFormInitial);
     clienteId: '',
     subtotal: 0,
     ivaRate: 14,
@@ -78,7 +76,7 @@ export default function Financeiro() {
   });
 
   // Estados Financeiro
-  const [transacaoForm, setTransacaoForm] = useState<Omit<Transacao, 'id' | 'reciboGerado'>>({
+  const [transacaoForm, setTransacaoForm] = useState<Omit<Transacao, 'id'>>({
     tipo: 'saida',
     categoria: '',
     valor: 0,
@@ -97,7 +95,6 @@ export default function Financeiro() {
 
   // Helpers
   const getClienteNome = (id: string) => clientes.find(c => c.id === id)?.nome || 'Desconhecido';
-  const getFornecedorNome = (id: string) => fornecedores.find(f => f.id === id)?.nome || 'N/A';
   const getCliente = (id: string) => clientes.find(c => c.id === id);
 
   const resetForms = () => {
@@ -191,7 +188,7 @@ export default function Financeiro() {
     });
   }, [transacoes, search, selectedConta]);
 
-  const filteredFaturas = useMemo(() => {
+  useMemo(() => {
     return faturas.filter(f => {
       const matchStatus = faturaFilter === 'all' || f.status === faturaFilter;
       const cliente = getCliente(f.clienteId)?.nome || '';
