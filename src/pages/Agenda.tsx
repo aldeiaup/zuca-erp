@@ -160,9 +160,9 @@ export default function Agenda() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Calendário Semanal */}
-        <div className="lg:col-span-2 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
+        <div className="md:col-span-2 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
           <div className="p-4 border-b border-gray-700/50 flex items-center justify-between">
             <button
               onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}
@@ -181,7 +181,8 @@ export default function Agenda() {
             </button>
           </div>
 
-          <div className="grid grid-cols-7 border-b border-gray-700/50">
+          <div className="overflow-x-auto">
+          <div className="grid grid-cols-7 border-b border-gray-700/50 min-w-[420px]">
             {weekDays.map((day, index) => {
               const isSelected = isSameDay(day, selectedDate);
               const isToday = isSameDay(day, new Date());
@@ -191,24 +192,25 @@ export default function Agenda() {
                 <button
                   key={index}
                   onClick={() => setSelectedDate(day)}
-                  className={`p-4 text-center border-r border-gray-700/50 last:border-r-0 transition-all ${
+                  className={`p-2 sm:p-4 text-center border-r border-gray-700/50 last:border-r-0 transition-all ${
                     isSelected ? 'bg-gold-500/10' : 'hover:bg-gray-700/30'
                   }`}
                 >
-                  <p className="text-gray-400 text-xs uppercase">{format(day, 'EEE', { locale: pt })}</p>
-                  <p className={`text-lg font-bold mt-1 ${
+                  <p className="text-gray-400 text-[10px] sm:text-xs uppercase">{format(day, 'EEE', { locale: pt })}</p>
+                  <p className={`text-base sm:text-lg font-bold mt-1 ${
                     isToday ? 'text-gold-400' : isSelected ? 'text-white' : 'text-gray-300'
                   }`}>
                     {format(day, 'd')}
                   </p>
                   {count > 0 && (
-                    <span className="inline-block mt-1 px-2 py-0.5 bg-gold-500/20 text-gold-400 text-xs rounded-full">
+                    <span className="inline-block mt-1 px-1.5 sm:px-2 py-0.5 bg-gold-500/20 text-gold-400 text-[10px] sm:text-xs rounded-full">
                       {count}
                     </span>
                   )}
                 </button>
               );
             })}
+          </div>
           </div>
 
           <div className="max-h-[400px] overflow-y-auto">

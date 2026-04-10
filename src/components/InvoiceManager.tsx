@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useStore } from '../store';
-import { getLastKnownRates, convertToAOA } from '../lib/bna';
+import { getLastKnownRates } from '../lib/bna';
 import { format, isWithinInterval, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import {

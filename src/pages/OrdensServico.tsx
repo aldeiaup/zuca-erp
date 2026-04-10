@@ -168,14 +168,14 @@ export default function OrdensServico() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
             <FileText className="text-gold-400" /> Ordens de Serviço
           </h1>
-          <p className="text-gray-400">Controlo de fluxo de trabalho na oficina</p>
+          <p className="text-gray-400 text-sm">Controlo de fluxo de trabalho na oficina</p>
         </div>
-        <button onClick={openNew} className="bg-gold-500 hover:bg-gold-600 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all">
+        <button onClick={openNew} className="bg-gold-500 hover:bg-gold-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all">
           <Plus className="w-5 h-5" /> Nova OS
         </button>
       </div>
@@ -253,7 +253,8 @@ export default function OrdensServico() {
 
         {/* Detail Panel */}
         {osSelecionada && (
-          <div className="lg:w-1/2 bg-gray-800/40 border border-gray-700 rounded-3xl p-6 h-fit sticky top-6 space-y-5">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/95 p-4 lg:relative lg:inset-auto lg:z-auto lg:bg-transparent lg:p-0 lg:w-1/2">
+          <div className="bg-gray-800/90 lg:bg-gray-800/40 border border-gray-700 rounded-3xl p-6 h-fit lg:sticky lg:top-6 space-y-5">
             <div className="flex justify-between items-start">
               <h3 className="text-xl font-bold text-white">{osSelecionada.numero}</h3>
               <button onClick={() => setSelectedOS(null)} className="p-2 text-gray-500 hover:text-white"><X /></button>
@@ -323,6 +324,7 @@ export default function OrdensServico() {
                 <Trash2 />
               </button>
             </div>
+          </div>
           </div>
         )}
       </div>

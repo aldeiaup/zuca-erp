@@ -96,7 +96,7 @@ export default function Viaturas() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-5 border border-gray-700/50">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center mb-3">
             <CarIcon className="w-5 h-5 text-white" />
@@ -209,8 +209,8 @@ export default function Viaturas() {
         </div>
 
         {viaturaSelecionada && (
-          <div className="lg:w-1/2">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden sticky top-6">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/95 p-4 lg:relative lg:inset-auto lg:z-auto lg:bg-transparent lg:p-0 lg:w-1/2">
+            <div className="bg-gray-800/90 lg:bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden lg:sticky lg:top-6">
               <div className="p-6 border-b border-gray-700/50 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-gradient-to-br from-gold-500 to-gold-600 rounded-2xl flex items-center justify-center shadow-lg">

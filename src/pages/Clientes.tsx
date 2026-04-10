@@ -84,8 +84,8 @@ export default function Clientes() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             <input
@@ -164,9 +164,10 @@ export default function Clientes() {
           )}
         </div>
 
-        <div className="xl:col-span-1">
-          {clienteSelecionado ? (
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 sticky top-6">
+        {/* Painel de detalhe: overlay em mobile, coluna lateral em lg+ */}
+        {clienteSelecionado && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/95 p-4 lg:relative lg:inset-auto lg:z-auto lg:bg-transparent lg:p-0 lg:block">
+          <div className="bg-gray-800/90 lg:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 lg:sticky lg:top-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-white">Detalhes do Cliente</h3>
                 <button onClick={() => setSelectedCliente(null)} className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg">
@@ -228,13 +229,8 @@ export default function Clientes() {
                 )}
               </div>
             </div>
-          ) : (
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 text-center">
-              <User className="w-12 h-12 mx-auto mb-4 text-gray-600" />
-              <p className="text-gray-400">Selecione um cliente para ver os detalhes</p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {showModal && (

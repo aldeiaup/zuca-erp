@@ -1,9 +1,8 @@
 import {
-  DollarSign, TrendingUp, AlertCircle, CheckCircle, FileText, Download,
-  ArrowUpRight, CreditCard, Banknote, Search, Plus, Edit2, Trash2, X, Save,
-  Building2, User, Wallet, Landmark, Receipt, Calendar, Users, Calculator,
-  PieChart, FileCheck, Coins, RefreshCcw, History, ArrowRightLeft, ShieldAlert,
-  Tag, Phone, ShieldCheck, Eye, Printer, Send, Hash
+  AlertCircle, Download,
+  Banknote, Search, Plus, Edit2, Trash2, X,
+  Building2, Wallet, Landmark, Receipt, Users,
+  PieChart, History, Tag, Phone, Printer, ShieldAlert
 } from 'lucide-react';
 import { useStore } from '../store';
 import type { Transacao, Fornecedor } from '../store';
@@ -53,9 +52,11 @@ export default function Financeiro() {
   const [modalType, setModalType] = useState<'transacao' | 'fornecedor' | 'adiantamento' | 'conta' | 'fatura'>('transacao');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  const [selectedConta, setSelectedConta] = useState<string | 'todos'>('todos');
+  const [selectedConta] = useState<string | 'todos'>('todos');
 
   // Estados Faturas
+  const [faturaFilter] = useState<'all' | 'paga' | 'emitida'>('all');
+  const [selectedFatura, setSelectedFatura] = useState<string | null>(null);
   const faturaFormInitial = {
     clienteId: '',
     subtotal: 0,
@@ -66,14 +67,6 @@ export default function Financeiro() {
     meioPagamento: '' as MeioPagamento | '',
   };
   const [faturaForm, setFaturaForm] = useState<FaturaForm>(faturaFormInitial);
-    clienteId: '',
-    subtotal: 0,
-    ivaRate: 14,
-    dataEmissao: new Date().toISOString().split('T')[0],
-    dataVencimento: '',
-    status: 'emitida',
-    meioPagamento: '',
-  });
 
   // Estados Financeiro
   const [transacaoForm, setTransacaoForm] = useState<Omit<Transacao, 'id'>>({

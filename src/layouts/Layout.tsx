@@ -2,12 +2,15 @@ import { NavLink, Outlet } from 'react-router-dom';
 import {
   Car, Users, Wrench, Calendar, FileText, Package, DollarSign,
   BarChart3, Settings, LogOut, Bell, Search, Menu, X, UserCheck, Image,
-  MessageCircle, GitBranch
+  MessageCircle, GitBranch, LayoutGrid, Headset
 } from 'lucide-react';
 import { useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import ChangelogModal from '../components/ChangelogModal';
 import BnaExchangeTicker from '../components/BnaExchangeTicker';
+import { useReceptionBadge } from '../hooks/useReception';
+import ReceptionModal from '../components/reception/ReceptionModal';
 
 const menuSections = [
   {
@@ -22,6 +25,7 @@ const menuSections = [
       { icon: FileText, label: 'Ordens de Serviço', path: '/dashboard/ordens' },
       { icon: Calendar, label: 'Agenda', path: '/dashboard/agenda' },
       { icon: DollarSign, label: 'Financeiro', path: '/dashboard/financeiro' },
+      { icon: LayoutGrid, label: 'Produção', path: '/dashboard/producao' },
     ]
   },
   {
@@ -40,7 +44,7 @@ const menuSections = [
     ]
   },
   {
-    title: 'EQUIPE',
+    title: 'EQUIPA',
     items: [
       { icon: UserCheck, label: 'Funcionários', path: '/dashboard/funcionarios' },
       { icon: BarChart3, label: 'Relatórios', path: '/dashboard/relatorios' },
@@ -54,6 +58,13 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const { user, logout } = useAuth();
+  const { totalNaoLidas, isOpen: receptionIsOpen, openReception } = useReceptionBadge();
+  // Permissão de acesso à Recepção
+  // master → CEO (tudo) | admin → Administrador (tudo) | gerente → vê tudo | funcionario → só mensagens
+  const podeAbrirRecepcao = user?.tipo === 'master'
+    || user?.tipo === 'admin'
+    || user?.tipo === 'gerente'
+    || user?.tipo === 'funcionario';
 
   const handleLogout = () => {
     logout();
@@ -104,6 +115,20 @@ export default function Layout() {
                     )}
                   </NavLink>
                 ))}
+                {section.title === 'PRINCIPAL' && podeAbrirRecepcao && (
+                  <button
+                    onClick={() => { setSidebarOpen(false); openReception(); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-all"
+                  >
+                    <Headset className="w-5 h-5" />
+                    <span className="text-sm font-medium flex-1 text-left">Recepção</span>
+                    {totalNaoLidas > 0 && (
+                      <span className="min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                        {totalNaoLidas > 99 ? '99+' : totalNaoLidas}
+                      </span>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -165,7 +190,7 @@ export default function Layout() {
           </div>
         </header>
 
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-6 overflow-y-auto">
           <Outlet />
         </main>
       </div>
@@ -178,6 +203,10 @@ export default function Layout() {
       )}
 
       {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
+
+      <AnimatePresence>
+        {receptionIsOpen && <ReceptionModal />}
+      </AnimatePresence>
     </div>
   );
 }

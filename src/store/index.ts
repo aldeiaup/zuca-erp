@@ -196,7 +196,7 @@ export interface Transacao {
   contaId: string; // ID da Caixa/Conta
   metodoPagamento: 'numerario' | 'transferencia' | 'multibanco' | 'tpa' | 'multicaixa_express' | 'cheque';
   status: 'concluido' | 'pendente' | 'reconciliado';
-  reciboGerado: boolean;
+  reciboGerado?: boolean;
   iva?: number;
   retencao?: number;
 }
@@ -333,7 +333,7 @@ interface AppState {
   updateFornecedor: (id: string, data: Partial<Fornecedor>) => void;
   deleteFornecedor: (id: string) => void;
 
-  addTransacao: (transacao: Omit<Transacao, 'id'>) => void;
+  addTransacao: (transacao: Omit<Transacao, 'id'> & { reciboGerado?: boolean }) => void;
   updateTransacao: (id: string, data: Partial<Transacao>) => void;
   deleteTransacao: (id: string) => void;
 

@@ -4,7 +4,7 @@ import {
   Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { useStore } from '../store';
-import { getLastKnownRates, convertToAOA, formatCurrency } from '../lib/bna';
+import { getLastKnownRates, convertToAOA } from '../lib/bna';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import {

@@ -76,8 +76,8 @@ export default function Relatorios() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="md:col-span-2 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-white">Serviços Mais Prestados</h3>
             <button className="text-gold-400 hover:text-gold-300 text-sm font-medium">Ver completo</button>

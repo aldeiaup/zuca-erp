@@ -2,9 +2,10 @@ import { BarChart3, FileText, DollarSign, Users, TrendingUp, Calendar, Car, Arro
 import { useStore } from '../store';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import TeamPerformance from '../components/dashboard/TeamPerformance';
 
 export default function Dashboard() {
-  const { ordensServico, faturas, clientes, agenda, estoque, viaturas, user } = useStore();
+  const { ordensServico, faturas, clientes, agenda, estoque, viaturas, user, funcionarios, tarefasKanban } = useStore();
   const hoje = new Date();
 
   const ordensAbertas = ordensServico.filter(o => ['pendente', 'em_andamento', 'aguardando_peca'].includes(o.status));
@@ -97,8 +98,8 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="md:col-span-2 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
           <div className="p-6 border-b border-gray-700/50 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-white">Ordens de Serviço</h3>
@@ -254,6 +255,11 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Performance da Equipa — exclusivo CEO (master) */}
+      {user?.tipo === 'master' && (
+        <TeamPerformance tarefas={tarefasKanban} funcionarios={funcionarios} />
       )}
     </div>
   );

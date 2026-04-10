@@ -16,6 +16,7 @@ import Relatorios from './pages/Relatorios';
 import Configuracoes from './pages/Configuracoes';
 import Galeria from './pages/Galeria';
 import MetaBusiness from './pages/MetaBusiness';
+import Producao from './pages/Producao';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -47,6 +48,7 @@ function AppRoutes() {
         <Route path="configuracoes" element={<Configuracoes />} />
         <Route path="galeria" element={<Galeria />} />
         <Route path="meta-business" element={<MetaBusiness />} />
+        <Route path="producao" element={<Producao />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

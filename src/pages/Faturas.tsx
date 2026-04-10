@@ -42,7 +42,6 @@ const getStatusBadge = (status: string) => {
 export default function Faturas() {
   const { faturas, clientes, addFatura, updateFatura, deleteFatura, config } = useStore();
   const taxaIva = config?.fiscal?.taxaIva ?? 14;
-  const serieFatura = config?.fiscal?.serie ?? 'FT';
 
   const [selectedFatura, setSelectedFatura] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'paga' | 'emitida'>('all');
